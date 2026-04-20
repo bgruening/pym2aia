@@ -1,6 +1,6 @@
-from typing import Literal
+from enum import Enum
 from typing import List, Dict
-from ctypes import create_string_buffer, c_void_p, c_uint32, c_char_p, c_double, c_float, c_ushort, POINTER
+from ctypes import create_string_buffer, c_void_p, c_uint32, c_char_p, c_double, c_float, c_ushort, POINTER  # noqa: F401 (used in type annotations)
 import pathlib
 import numpy as np
 import SimpleITK as sitk
@@ -8,40 +8,108 @@ import SimpleITK as sitk
 from .Library import get_library
 
 
-m2NormalizationNone: str = 'None'
-m2NormalizationTIC: str = 'TIC'
-m2NormalizationSum: str = 'Sum'
-m2NormalizationMean: str = 'Mean'
-m2NormalizationMax: str = 'Max'
-m2NormalizationRMS: str = 'RMS'
-m2NormalizationInternal: str = 'Internal'
-m2NormalizationExternal: str = 'External'
-m2Normalization = Literal[f"{m2NormalizationTIC}", f"{m2NormalizationSum}", f"{m2NormalizationMean}",
-                          f"{m2NormalizationMax}", f"{m2NormalizationRMS}", f"{m2NormalizationInternal}",
-                          f"{m2NormalizationExternal}", f"{m2NormalizationNone}"]
+class m2Normalization(str, Enum):
+    NONE     = "None"
+    TIC      = "TIC"
+    Sum      = "Sum"
+    Mean     = "Mean"
+    Max      = "Max"
+    RMS      = "RMS"
+    Internal = "Internal"
+    External = "External"
 
-m2SmoothingSavitzkyGolay: str = "SavitzkyGolay"
-m2SmoothingGaussian: str = "Gaussian"
-m2Smoothing = Literal[f"{m2SmoothingSavitzkyGolay}",
-                      f"{m2SmoothingGaussian}", "None"]
+class m2Smoothing(str, Enum):
+    NONE          = "None"
+    SavitzkyGolay = "SavitzkyGolay"
+    Gaussian      = "Gaussian"
 
-m2PoolingMean: str = "Mean"
-m2PoolingMedian: str = "Median"
-m2PoolingMaximum: str = "Maximum"
-m2PoolingSum: str = "Sum"
-m2Pooling = Literal[f"{m2PoolingMean}", f"{m2PoolingMedian}",
-                    f"{m2PoolingMaximum}", f"{m2PoolingSum}"]
+class m2Pooling(str, Enum):
+    NONE    = "None"
+    Mean    = "Mean"
+    Median  = "Median"
+    Maximum = "Maximum"
+    Sum     = "Sum"
 
-m2BaselineCorrectionTopHat: str = "TopHat"
-m2BaselineCorrectionMedian: str = "Median"
-m2BaselineCorrection = Literal[f"{m2BaselineCorrectionTopHat}",
-                               f"{m2BaselineCorrectionMedian}", "None"]
+class m2BaselineCorrection(str, Enum):
+    NONE   = "None"
+    TopHat = "TopHat"
+    Median = "Median"
 
-m2IntensityTransformationLog2: str = "Log2"
-m2IntensityTransformationLog10: str = "Log10"
-m2IntensityTransformationSquareRoot: str = "SquareRoot"
-m2IntensityTransformation = Literal[f"{m2IntensityTransformationLog2}",
-                                    f"{m2IntensityTransformationLog10}", f"{m2IntensityTransformationSquareRoot}", "None"]
+class m2IntensityTransformation(str, Enum):
+    NONE       = "None"
+    Log2       = "Log2"
+    Log10      = "Log10"
+    SquareRoot = "SquareRoot"
+
+
+class m2SpectrumFormat(str, Enum):
+    """Bitmask enum describing the storage format of spectra in an imzML file.
+    Maps to m2::SpectrumFormat in m2CoreCommon.h.
+    """
+    NONE              = "None"
+    Profile           = "Profile"
+    Centroid          = "Centroid"
+    Continuous        = "Continuous"
+    Processed         = "Processed"
+    ContinuousProfile = "ContinuousProfile"
+    ProcessedProfile  = "ProcessedProfile"
+    ContinuousCentroid = "ContinuousCentroid"
+    ProcessedCentroid  = "ProcessedCentroid"
+
+    @classmethod
+    def from_type_id(cls, type_id: int) -> "m2SpectrumFormat":
+        _map = {0:cls.NONE, 1:cls.Profile, 2:cls.Centroid, 4:cls.Continuous,
+                8:cls.Processed, 21:cls.ContinuousProfile, 41:cls.ProcessedProfile,
+                70:cls.ContinuousCentroid, 138:cls.ProcessedCentroid}
+        return _map.get(type_id, cls.NONE)
+
+
+class m2ImageNormalization(str, Enum):
+    """Spatial (image-level) normalization strategies.
+    Maps to m2::ImageNormalizationStrategyType in m2SignalCommon.h.
+    """
+    NONE          = "None"
+    MinMax        = "MinMax"
+    zScore        = "zScore"
+    ParetoScaling = "ParetoScaling"
+    RangeScaling  = "RangeScaling"
+    VastScaling   = "VastScaling"
+
+
+class m2ImageSmoothing(str, Enum):
+    """Spatial (image-level) smoothing strategies.
+    Maps to m2::ImageSmoothingStrategyType in m2SignalCommon.h.
+    """
+    NONE    = "None"
+    Median  = "Median"
+    Gaussian = "Gaussian"
+
+# Backward-compatible aliases (keep old names working)
+m2NormalizationNone     = m2Normalization.NONE
+m2NormalizationTIC      = m2Normalization.TIC
+m2NormalizationSum      = m2Normalization.Sum
+m2NormalizationMean     = m2Normalization.Mean
+m2NormalizationMax      = m2Normalization.Max
+m2NormalizationRMS      = m2Normalization.RMS
+m2NormalizationInternal = m2Normalization.Internal
+m2NormalizationExternal = m2Normalization.External
+
+m2SmoothingSavitzkyGolay = m2Smoothing.SavitzkyGolay
+m2SmoothingGaussian      = m2Smoothing.Gaussian
+
+m2PoolingMean    = m2Pooling.Mean
+m2PoolingMedian  = m2Pooling.Median
+m2PoolingMaximum = m2Pooling.Maximum
+m2PoolingSum     = m2Pooling.Sum
+m2PoolingNone    = m2Pooling.NONE
+
+m2BaselineCorrectionTopHat = m2BaselineCorrection.TopHat
+m2BaselineCorrectionMedian = m2BaselineCorrection.Median
+
+m2IntensityTransformationLog2       = m2IntensityTransformation.Log2
+m2IntensityTransformationLog10      = m2IntensityTransformation.Log10
+m2IntensityTransformationSquareRoot = m2IntensityTransformation.SquareRoot
+
 
 
 class ImzMLReader(object):
@@ -56,7 +124,6 @@ class ImzMLReader(object):
         I = m2.ImzMLReader("path/to/imzMl/file.imzML")
         I.SetNormalization(m2.m2NormalizationTIC)
         I.SetIntensityTransformation(m2.m2IntensityTransformationSquareRoot)
-        I.Execute()
         ys_2 = I.GetMeanSpectrum()
         i_2 = I.GetArray(imz, 75)
 
@@ -71,142 +138,11 @@ class ImzMLReader(object):
 
         self.lib = get_library()
 
-        HANDLE_PTR = c_void_p
-
-        self.lib.CreateImageHandle.argtypes = [c_char_p]
-        self.lib.CreateImageHandle.restype = HANDLE_PTR
-
-        self.lib.DestroyImageHandle.argtypes = [HANDLE_PTR]
-        self.lib.DestroyImageHandle.restype = None
-
-        self.lib.GetSize.argtypes = [HANDLE_PTR, POINTER(c_uint32)]
-        self.lib.GetSize.restype = None
-
-        self.lib.GetSpacing.argtypes = [
-            HANDLE_PTR, POINTER(c_double)]
-        self.lib.GetSpacing.restype = None
-
-        self.lib.GetOrigin.argtypes = [
-            HANDLE_PTR, POINTER(c_double)]
-        self.lib.GetOrigin.restype = None
-
-        self.lib.GetXAxis.argtypes = [
-            HANDLE_PTR, POINTER(c_double)]
-        self.lib.GetXAxis.restype = None
-
-        self.lib.GetXAxisDepth.argtypes = [HANDLE_PTR]
-        self.lib.GetXAxisDepth.restype = c_uint32
-
-        self.lib.GetImageArrayFloat64.argtypes = [
-            HANDLE_PTR, c_double, c_double, POINTER(c_double)]
-        self.lib.GetImageArrayFloat64.restype = None
-
-        self.lib.GetImageArrayFloat32.argtypes = [
-            HANDLE_PTR, c_double, c_double, POINTER(c_float)]
-        self.lib.GetImageArrayFloat32.restype = None
-
-        self.lib.GetMaskArray.argtypes = [
-            HANDLE_PTR, POINTER(c_ushort)]
-        self.lib.GetMaskArray.restype = None
-
-        self.lib.GetIndexArray.argtypes = [
-            HANDLE_PTR, POINTER(c_uint32)]
-        self.lib.GetIndexArray.restype = None
-
-        self.lib.GetNormalizationArray.argtypes =[
-            HANDLE_PTR, c_char_p, POINTER(c_double)]
-        self.lib.GetNormalizationArray.restype = None
-
-        self.lib.GetSpectrumType.argtypes = [HANDLE_PTR]
-        self.lib.GetSpectrumType.restype = c_uint32
-
-        self.lib.GetSpectrumDepth.argtypes = [HANDLE_PTR, c_uint32]
-        self.lib.GetSpectrumDepth.restype = c_uint32
-
-        self.lib.GetSizeInBytesOfYAxisType.argtypes = [HANDLE_PTR]
-        self.lib.GetSizeInBytesOfYAxisType.restype = c_uint32
-
-        self.lib.GetMeanSpectrum.argtypes = [
-            HANDLE_PTR, POINTER(c_double)]
-        self.lib.GetMeanSpectrum.restype = None
-
-        self.lib.GetSpectrumPosition.argtypes = [
-            HANDLE_PTR, c_uint32, POINTER(c_uint32)]
-        self.lib.GetSpectrumPosition.restype = None
-
-        self.lib.GetMaxSpectrum.argtypes = [
-            HANDLE_PTR, POINTER(c_double)]
-        self.lib.GetMaxSpectrum.restype = None
-
-        self.lib.GetYDataTypeSizeInBytes.argtypes = [HANDLE_PTR]
-        self.lib.GetYDataTypeSizeInBytes.restype = c_uint32
-
-        self.lib.GetNumberOfSpectra.argtypes = [HANDLE_PTR]
-        self.lib.GetNumberOfSpectra.restype = c_uint32
-
-        self.lib.GetMetaDataDictionary.argtypes = [HANDLE_PTR]
-        self.lib.GetMetaDataDictionary.restype = c_char_p
-
-        self.lib.DestroyCharBuffer.argtypes = [HANDLE_PTR]
-        self.lib.DestroyCharBuffer.restype = None
-
-        self.lib.GetSpectrum.argtypes = [
-            HANDLE_PTR, c_uint32, POINTER(c_float), POINTER(c_float)]
-        self.lib.GetSpectrum.restype = None
-
-        self.lib.GetSpectra.argtypes = [
-            HANDLE_PTR, c_void_p, c_uint32, POINTER(c_float)]
-        self.lib.GetSpectra.restype = None
-
-        self.lib.GetIntensities.argtypes = [
-            HANDLE_PTR, c_void_p, c_uint32, POINTER(c_float)]
-        self.lib.GetIntensities.restype = None
-
-        self.lib.WriteContinuousCentroidImzML.argtypes = [
-            HANDLE_PTR, c_char_p, POINTER(c_double), c_uint32]
-        self.lib.WriteContinuousCentroidImzML.restype = None
-
-        self.lib.SetSmoothing.argtypes = [HANDLE_PTR, c_char_p, c_uint32]
-        self.lib.SetSmoothing.restype = None
-
-        self.lib.SetBaselineCorrection.argtypes = [HANDLE_PTR, c_char_p, c_uint32]
-        self.lib.SetBaselineCorrection.restype = None
-        
-        self.lib.SetNormalization.argtypes = [HANDLE_PTR, c_char_p]
-        self.lib.SetNormalization.restype = None
-
-        self.lib.SetIntensityTransformation.argtypes = [HANDLE_PTR, c_char_p]
-        self.lib.SetIntensityTransformation.restype = None
-
-        self.lib.SetPooling.argtypes = [HANDLE_PTR, c_char_p]
-        self.lib.SetPooling.restype = None
-
-        self.lib.SetTolerance.argtypes = [HANDLE_PTR, c_float]
-        self.lib.SetTolerance.restype = None
-
-        self.lib.GetTolerance.argtypes = [HANDLE_PTR]
-        self.lib.GetTolerance.restype = c_float
-        
-        self.lib.Update.argtypes = [HANDLE_PTR]
-        self.lib.Update.restype = None
-
         self.x_axis = None
 
         self.imzML_path = imzML_path
         self.handle = None
         self.spectrum_type_id = None
-        self.spectrum_types = {
-                0 :'None' ,
-                1: 'Profile',
-                2: 'Centroid',
-                4: 'Continuous',
-                8: 'Processed',
-                21: 'ContinuousProfile',
-                41:'ProcessedProfile',
-                70: 'ContinuousCentroid',
-                138:'ProcessedCentroid'
-        }
-
 
 
         self.baseline_correction = baseline_correction
@@ -216,14 +152,18 @@ class ImzMLReader(object):
         self.normalization = normalization
         self.intensity_transformation = intensity_transformation
         self.pooling = pooling
+        self.image_normalization = m2ImageNormalization.NONE
+        self.image_smoothing = m2ImageSmoothing.NONE
 
 
         # Read and initialize the image by creating a handle
         self.Load()
 
 
-    def __delete__(self):
-        self.lib.DestroyImageHandle(self.handle)
+    def __del__(self):
+        if self.handle is not None:
+            self.lib.DestroyImageHandle(self.handle)
+            self.handle = None
 
     def Load(self):
         
@@ -238,6 +178,8 @@ class ImzMLReader(object):
         self.SetNormalization(self.normalization)
         self.SetIntensityTransformation(self.intensity_transformation)
         self.SetPooling(self.pooling)
+        self.SetImageNormalization(self.image_normalization)
+        self.SetImageSmoothing(self.image_smoothing)
 
         self.lib.Update(self.handle)
 
@@ -277,40 +219,13 @@ class ImzMLReader(object):
         '''Name (including file ending) of the given imzML'''
         return self.path().name
 
-    
-    def WriteContinuousCentroidImzML(self, path : str, centroids):
-        ''' Given a list of centroids, write a continuous centroid imzML to the given path.
-            Use 'SetTolerance' to define the range query for each centroid (ppm).
-
-            :param path: Target file path the <path>.imzML and the <path>.ibd is written to.
-            :param centroids: a list of centroids.
-
-            Example usage::
-
-                import m2aia as m2
-
-                I = m2.ImzMLReader("path/to/imzMl/file.imzML")
-                I.Execute()
-                I.SetTolerance(75)
-                I.WriteContinuousCentroidImzML("path/to/imzMl/file.imzML", [300, 400, 500])
-
-        '''
-        cPath = create_string_buffer(path.encode())
-        
-        centroids = np.array(centroids, dtype=np.double)
-        self.lib.WriteContinuousCentroidImzML(self.handle, cPath, centroids.ctypes.data_as(
-            POINTER(c_double)), len(centroids))
-
 
     def CheckHandle(self):
         ''' Check if the handle was initialized properly.
-        To prevent this check from throwing an exception you must call Execute() once.
-
-        :raises: ReferenceError: is invalid file name and or not yet called Execute().
         '''
         if self.handle is None:
             raise ReferenceError(
-                "Please initialize image handle by providing a valid file name and run the Execute() function of the reader!")
+                "Please initialize image handle by providing a valid file name")
 
     def GetParametersAsFormattedString(self):
         '''Transform signal processing parameters into a fomatted string representation.'''
@@ -322,6 +237,8 @@ class ImzMLReader(object):
         s += f"(normalization {self.normalization})\n"
         s += f"(pooling {self.pooling})\n"
         s += f"(transform {self.intensity_transformation})\n"
+        s += f"(image-normalization {self.image_normalization})\n"
+        s += f"(image-smoothing {self.image_smoothing})\n"
         return s
 
     def SetSmoothing(self, strategy: m2Smoothing, half_window_size=2):
@@ -381,6 +298,26 @@ class ImzMLReader(object):
         self.pooling = strategy
         arg = create_string_buffer(strategy.encode())
         self.lib.SetPooling(self.handle, arg)
+
+    def SetImageNormalization(self, strategy: m2ImageNormalization):
+        '''Set the spatial (image-level) normalization strategy applied after ion image generation.
+
+        :param strategy: m2ImageNormalization
+            One of: None, MinMax, zScore, ParetoScaling, RangeScaling, VastScaling.
+        '''
+        self.image_normalization = strategy
+        arg = create_string_buffer(strategy.encode())
+        self.lib.SetImageNormalization(self.handle, arg)
+
+    def SetImageSmoothing(self, strategy: m2ImageSmoothing):
+        '''Set the spatial (image-level) smoothing strategy applied after ion image generation.
+
+        :param strategy: m2ImageSmoothing
+            One of: None, Median, Gaussian.
+        '''
+        self.image_smoothing = strategy
+        arg = create_string_buffer(strategy.encode())
+        self.lib.SetImageSmoothing(self.handle, arg)
 
     def SetTolerance(self, tol: np.float32):
         '''
@@ -673,7 +610,7 @@ class ImzMLReader(object):
         :return: The type of the imzML as string.
         '''
         self.CheckHandle()
-        return self.spectrum_types[self.spectrum_type_id]
+        return m2SpectrumFormat.from_type_id(self.spectrum_type_id)
 
     def GetSizeInBytesOfYAxisType(self) -> int:
         '''Get number of bytes used to store the intensity values.
@@ -735,7 +672,7 @@ class ImzMLReader(object):
             ys = np.zeros(self.depth, dtype=np.float32)
         
         if ys.shape[0] != self.depth:
-            np.resize(ys, (self.depth))
+            ys = np.resize(ys, (self.depth))
         
         self.lib.GetIntensities(
             self.handle, index, ys.ctypes.data_as(POINTER(c_float)))
@@ -813,69 +750,7 @@ class ImzMLReader(object):
         '''
         self.CheckHandle()
         while (True):
-            ids = np.random.random_integers(
-                0, self.number_of_spectra-1, batch_size)
+            ids = np.random.randint(
+                0, self.number_of_spectra, batch_size)
             data = np.array([self.GetSpectrum(int(i))[1] for i in ids])
             yield data
-
-    # def _NeighborsStructureElement(self,neighbors, shape):
-    #     N = np.prod(shape)
-    #     d = np.array(N*[0])
-    #     d[:neighbors] = 1
-    #     random.shuffle(d)
-    #     while d[N//2] == 1:
-    #         random.shuffle(d)
-    #     d[N//2] = 1
-    #     return np.reshape(d,shape)
-
-    # def BatchIteratorWithNNeighbors(self, batch_size, shuffle=True, neighbors=3):
-    #     """
-    #         1 random entry + subsequently n neighbors
-    #         [random sample x]
-    #         [neighbor n-1]
-    #         [neighbor n-2]
-    #         ...
-    #         [neighbor n-n]
-    #     """
-    #     assert(batch_size%(neighbors+1) == 0)
-
-    #     ids = [i+1 for i in range(self.GetNumberOfSpectra())]
-    #     pos = np.zeros((len(ids),3),np.int32)
-    #     for i in ids:
-    #         pos[i-1] = self.GetSpectrumPosition(i-1)
-
-    #     spatial_representation = np.zeros(self.GetShape()[:2])
-    #     spatial_representation[pos[:,0], pos[:,1]] = ids
-
-    #     missing_values = len(ids) % batch_size
-    #     # ensure full batches by padding the id list
-    #     ids = np.pad(ids, (missing_values//2 + missing_values%2, missing_values//2), mode='reflect')
-    #     assert((len(ids) % batch_size) != 0)
-
-    #     structure_element = self._NeighborsStructureElement(neighbors, [3,3])
-
-    #     if shuffle:
-    #         random.shuffle(ids)
-
-    #     number_of_seeds = batch_size // (neighbors+1)
-    #     # generate batches until all ids are touched once
-    #     for p in range(len(ids) // batch_size - 1):
-    #         neighbor_ids = []
-
-    #         for seed in ids[p*number_of_seeds:(p+1)*number_of_seeds]:
-    #             seed_id = seed
-    #             while True:
-    #                 mask = ndimage.binary_dilation(spatial_representation == seed_id, structure=structure_element).astype(bool)
-    #                 masking_result = spatial_representation[mask]
-    #                 if len(masking_result) != (neighbors + 1):
-    #                     seed_id = ids[random.randint(0,len(ids)-1)]
-    #                 else:
-    #                     break
-    #             masking_result[masking_result == 0] = masking_result[masking_result != 0][0]
-    #             neighbor_ids.append(masking_result)
-
-    #         data = np.array([self.GetSpectrum(int(i-1))[1] for i in np.reshape(neighbor_ids,(-1))])
-
-    #         yield data
-
-    #     yield None

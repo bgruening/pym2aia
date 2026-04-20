@@ -31,12 +31,7 @@ html:
 wheel:
 	rm -f dist/*
 	$(PYTHON) setup_prepare.py --linux --download -v v2023.10.6
-	$(PYTHON) -m build
-	mv dist/m2aia-0.5.2-py3-none-any.whl dist/m2aia-0.5.2-py3-none-manylinux_2_31_x86_64.whl
-	$(PYTHON) setup_prepare.py --windows --download -v v2023.10.8
-	$(PYTHON) -m build
-	mv dist/m2aia-0.5.2-py3-none-any.whl dist/m2aia-0.5.2-py3-none-win-amd64.whl
-	$(PYTHON) setup_prepare.py --windows --linux -v v2023.10.6
-	$(PYTHON) -m build
-	rm dist/m2aia-0.5.2-py3-none-any.whl
+	$(PYTHON) -m build --wheel
+	$(PYTHON) setup_prepare.py --windows --download
+	$(PYTHON) -m build --wheel
 	$(PYTEST)

@@ -1,72 +1,84 @@
 import ctypes
 import ctypes.util
+from ctypes import c_void_p, c_uint32, c_char_p, c_double, c_float, c_ushort, POINTER
 import pathlib
 import platform
 import os
-import subprocess
-import sys
-from typing import List, Set
 
-def get_shared_lib_dependencies(so_file_path):
-    try:
-        ldd_output = subprocess.check_output(['ldd', so_file_path], stderr=subprocess.STDOUT, universal_newlines=True)
-        # print("ldd_output",ldd_output)
-        dependencies = {line.split(' => ')[0].strip() for line in ldd_output.splitlines() if "not found" in line}
-        return dependencies
-    except subprocess.CalledProcessError:
-        return {}
+_lib = None
 
-def load_library_dependencies_recursively(search_path : pathlib.Path, library_name: str, dependencies: List):
-    """ Load required M2aia libraries recursively
-    """
-    lib_path = str(search_path.joinpath(library_name))
-    lib_missing_dependencies = get_shared_lib_dependencies(lib_path)
-    
-    try:
-        ctypes.cdll.LoadLibrary(lib_path)
-        if lib_path not in dependencies:
-            dependencies.append(lib_path)
-        return
-    except:
-        while lib_missing_dependencies:
-            lib_working = lib_missing_dependencies.pop()
-            load_library_dependencies_recursively(search_path, lib_working, dependencies)
-        
-    ctypes.cdll.LoadLibrary(lib_path)
-    if lib_path not in dependencies:
-        dependencies.append(lib_path)
-        
+
+def _configure_signatures(lib):
+    """Declare argtypes and restype for every C function in libM2aiaCore. Called once."""
+    H = c_void_p  # opaque image handle
+
+    lib.CreateImageHandle.argtypes              = [c_char_p];                                  lib.CreateImageHandle.restype              = H
+    lib.DestroyImageHandle.argtypes             = [H];                                         lib.DestroyImageHandle.restype             = None
+    lib.GetSize.argtypes                        = [H, POINTER(c_uint32)];                      lib.GetSize.restype                        = None
+    lib.GetSpacing.argtypes                     = [H, POINTER(c_double)];                      lib.GetSpacing.restype                     = None
+    lib.GetOrigin.argtypes                      = [H, POINTER(c_double)];                      lib.GetOrigin.restype                      = None
+    lib.GetXAxis.argtypes                       = [H, POINTER(c_double)];                      lib.GetXAxis.restype                       = None
+    lib.GetXAxisDepth.argtypes                  = [H];                                         lib.GetXAxisDepth.restype                  = c_uint32
+    lib.GetImageArrayFloat64.argtypes           = [H, c_double, c_double, POINTER(c_double)];  lib.GetImageArrayFloat64.restype           = None
+    lib.GetImageArrayFloat32.argtypes           = [H, c_double, c_double, POINTER(c_float)];   lib.GetImageArrayFloat32.restype           = None
+    lib.GetMaskArray.argtypes                   = [H, POINTER(c_ushort)];                      lib.GetMaskArray.restype                   = None
+    lib.GetIndexArray.argtypes                  = [H, POINTER(c_uint32)];                      lib.GetIndexArray.restype                  = None
+    lib.GetNormalizationArray.argtypes          = [H, c_char_p, POINTER(c_double)];            lib.GetNormalizationArray.restype          = None
+    lib.GetSpectrumType.argtypes                = [H];                                         lib.GetSpectrumType.restype                = c_uint32
+    lib.GetSpectrumDepth.argtypes               = [H, c_uint32];                               lib.GetSpectrumDepth.restype               = c_uint32
+    lib.GetSizeInBytesOfYAxisType.argtypes      = [H];                                         lib.GetSizeInBytesOfYAxisType.restype      = c_uint32
+    lib.GetMeanSpectrum.argtypes                = [H, POINTER(c_double)];                      lib.GetMeanSpectrum.restype                = None
+    lib.GetMaxSpectrum.argtypes                 = [H, POINTER(c_double)];                      lib.GetMaxSpectrum.restype                 = None
+    lib.GetSpectrumPosition.argtypes            = [H, c_uint32, POINTER(c_uint32)];            lib.GetSpectrumPosition.restype            = None
+    lib.GetYDataTypeSizeInBytes.argtypes        = [H];                                         lib.GetYDataTypeSizeInBytes.restype        = c_uint32
+    lib.GetNumberOfSpectra.argtypes             = [H];                                         lib.GetNumberOfSpectra.restype             = c_uint32
+    lib.GetMetaDataDictionary.argtypes          = [H];                                         lib.GetMetaDataDictionary.restype          = c_char_p
+    lib.DestroyCharBuffer.argtypes              = [H];                                         lib.DestroyCharBuffer.restype              = None
+    lib.GetSpectrum.argtypes                    = [H, c_uint32, POINTER(c_float), POINTER(c_float)]; lib.GetSpectrum.restype                = None
+    lib.GetSpectra.argtypes                     = [H, POINTER(c_uint32), c_uint32, POINTER(c_float)]; lib.GetSpectra.restype                = None
+    lib.GetIntensities.argtypes                 = [H, POINTER(c_uint32), c_uint32, POINTER(c_float)]; lib.GetIntensities.restype            = None
+    lib.SetSmoothing.argtypes                   = [H, c_char_p, c_uint32];                     lib.SetSmoothing.restype                   = None
+    lib.SetBaselineCorrection.argtypes          = [H, c_char_p, c_uint32];                     lib.SetBaselineCorrection.restype          = None
+    lib.SetNormalization.argtypes               = [H, c_char_p];                               lib.SetNormalization.restype               = None
+    lib.SetIntensityTransformation.argtypes     = [H, c_char_p];                               lib.SetIntensityTransformation.restype     = None
+    lib.SetPooling.argtypes                     = [H, c_char_p];                               lib.SetPooling.restype                     = None
+    lib.SetTolerance.argtypes                   = [H, c_float];                                lib.SetTolerance.restype                   = None
+    lib.GetTolerance.argtypes                   = [H];                                         lib.GetTolerance.restype                   = c_float
+    lib.SetImageNormalization.argtypes          = [H, c_char_p];                               lib.SetImageNormalization.restype          = None
+    lib.SetImageSmoothing.argtypes              = [H, c_char_p];                               lib.SetImageSmoothing.restype              = None
+    lib.Update.argtypes                         = [H];                                         lib.Update.restype                         = None
 
 def load_m2aia_library():
     search_path = pathlib.Path(os.environ["M2AIA_PATH"])
-    target_library_path_parts = ["libM2aiaCore.so"]
-    
+
     if "Windows" in platform.platform():
         os.add_dll_directory(search_path)
-        # os.add_dll_directory(search_path.joinpath("MitkCore"))
         return ctypes.cdll.LoadLibrary("M2aiaCore.dll")
-    
-    else: #"Linux" in platform.platform():
 
-        if "Darwin" in platform.platform():
-            raise ImportError("macOS/Darwin based systems are currently not tested.")
+    if "Darwin" in platform.platform():
+        raise ImportError("macOS/Darwin based systems are currently not tested.")
 
-        dependencies = []
-        for lib_name in target_library_path_parts:
-            load_library_dependencies_recursively(search_path, lib_name, dependencies)
-        
-        os.environ["M2AIA_LIBRARIES"] = ';'.join(dependencies)       
-        for dep in dependencies:
-            ctypes.cdll.LoadLibrary(dep)
-        
-        return ctypes.cdll.LoadLibrary((search_path /  "libM2aiaCore.so").absolute())
+    # For development installs pointing at a raw M2aia build, prepend the search path
+    # so the linker finds all bundled .so files. For PyPI wheels, auditwheel has already
+    # rewritten the RPATH so this is a no-op.
+    search_str = str(search_path.resolve())
+    existing = os.environ.get("LD_LIBRARY_PATH", "")
+    if search_str not in existing.split(":"):
+        os.environ["LD_LIBRARY_PATH"] = search_str + (":" + existing if existing else "")
+
+    return ctypes.CDLL(str((search_path / "libM2aiaCore.so").resolve()), mode=ctypes.RTLD_GLOBAL)
     
     
 
 
 def get_library():
+    global _lib
+    if _lib is not None:
+        return _lib
     try:
-        return load_m2aia_library()
+        _lib = load_m2aia_library()
+        _configure_signatures(_lib)
+        return _lib
     except SystemExit:
         pass
     except ImportError as e:

@@ -65,8 +65,7 @@ class SpectrumDataset(BaseDataSet):
 
         I = m2.ImzMLReader("path/to/imzMl/file.imzML")
         I.SetNormalization(m2.m2NormalizationTIC)
-        I.SetIntensityTransformation(m2.m2IntensityTransformationSquareRoot)
-        I.Execute()      
+        I.SetIntensityTransformation(m2.m2IntensityTransformationSquareRoot) 
 
         dataset = m2.SpectrumDataset([I], shuffle=True)
         for X,Y in dataset():
