@@ -1,9 +1,9 @@
-from ..ImageIO import ImzMLReader
+from ..ImzMLReader import ImzMLReader
 from scipy.signal import find_peaks
 from scipy import stats
 import numpy as np
 
-def noise_mad(xs, ys):
+def noise_mad(ys):
     return stats.median_abs_deviation(ys, scale=1/1.4826)
 
 def pick_peaks(I: ImzMLReader, 
