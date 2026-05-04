@@ -59,7 +59,7 @@ def prepare():
         linux_archive = pathlib.Path(args.linux_archive)
         if args.download:
             tag, assets = get_release_assets(args.version)
-            url = find_asset_url(assets, "linux", ".tar.gz")
+            url = find_asset_url(assets, "ubuntu", ".tar.gz")
             print(f"Downloading {tag}: {url}")
             if linux_archive.exists():
                 os.remove(linux_archive)

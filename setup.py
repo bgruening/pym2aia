@@ -30,7 +30,7 @@ setuptools.setup(
     cmdclass={"bdist_wheel": bdist_wheel_plat},
     author="Jonas Cordes",
     author_email="j.cordes@th-mannheim.de",
-    description="Provide interfaces for M2aia.",
+    description="Provide interfaces for M²aia v2026.05",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://m2aia.github.io/m2aia",
