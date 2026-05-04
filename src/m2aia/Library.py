@@ -23,7 +23,7 @@ def _configure_signatures(lib):
     lib.GetImageArrayFloat32.argtypes           = [H, c_double, c_double, POINTER(c_float)];   lib.GetImageArrayFloat32.restype           = None
     lib.GetMaskArray.argtypes                   = [H, POINTER(c_ushort)];                      lib.GetMaskArray.restype                   = None
     lib.GetIndexArray.argtypes                  = [H, POINTER(c_uint32)];                      lib.GetIndexArray.restype                  = None
-    lib.GetNormalizationArray.argtypes          = [H, c_char_p, POINTER(c_double)];            lib.GetNormalizationArray.restype          = None
+    lib.GetNormalizationArray.argtypes          = [H, c_char_p, POINTER(c_float)];            lib.GetNormalizationArray.restype          = None
     lib.GetSpectrumType.argtypes                = [H];                                         lib.GetSpectrumType.restype                = c_uint32
     lib.GetSpectrumDepth.argtypes               = [H, c_uint32];                               lib.GetSpectrumDepth.restype               = c_uint32
     lib.GetSizeInBytesOfYAxisType.argtypes      = [H];                                         lib.GetSizeInBytesOfYAxisType.restype      = c_uint32
@@ -36,7 +36,7 @@ def _configure_signatures(lib):
     lib.DestroyCharBuffer.argtypes              = [H];                                         lib.DestroyCharBuffer.restype              = None
     lib.GetSpectrum.argtypes                    = [H, c_uint32, POINTER(c_float), POINTER(c_float)]; lib.GetSpectrum.restype                = None
     lib.GetSpectra.argtypes                     = [H, POINTER(c_uint32), c_uint32, POINTER(c_float)]; lib.GetSpectra.restype                = None
-    lib.GetIntensities.argtypes                 = [H, POINTER(c_uint32), c_uint32, POINTER(c_float)]; lib.GetIntensities.restype            = None
+    lib.GetIntensities.argtypes                 = [H, c_uint32, POINTER(c_float)];             lib.GetIntensities.restype                  = None
     lib.SetSmoothing.argtypes                   = [H, c_char_p, c_uint32];                     lib.SetSmoothing.restype                   = None
     lib.SetBaselineCorrection.argtypes          = [H, c_char_p, c_uint32];                     lib.SetBaselineCorrection.restype          = None
     lib.SetNormalization.argtypes               = [H, c_char_p];                               lib.SetNormalization.restype               = None
