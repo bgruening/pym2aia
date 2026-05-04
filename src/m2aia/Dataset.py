@@ -2,7 +2,7 @@ from operator import index
 from os import times
 from time import time
 from typing import *
-from . import ImageIO
+from . import ImzMLReader
 import hashlib
 import pathlib
 import numpy as np
@@ -10,7 +10,7 @@ import random
 
 
 class BaseDataSet():
-    def __init__(self, images : List[ImageIO.ImzMLReader], buffer_type : str) -> None:
+    def __init__(self, images : List[ImzMLReader], buffer_type : str) -> None:
         self.images = images
         self.elements = []
 
@@ -103,7 +103,7 @@ class SpectrumDataset(BaseDataSet):
         return left_index, right_index + 1
 
 
-    def __init__(self,images:List[ImageIO.ImzMLReader], 
+    def __init__(self,images:List[ImzMLReader], 
                  labeled_images:List[np.array] = None,
                  sampling_masks:List[np.array] = None,
                  exclude_labels:List[int] = [],
@@ -361,7 +361,7 @@ class SpectrumDataset(BaseDataSet):
 
 
 class IonImageDataset(BaseDataSet):
-    def __init__(self, images : List[ImageIO.ImzMLReader], 
+    def __init__(self, images : List[ImzMLReader], 
                        centroids:List[float], 
                        tolerance:float, 
                        tolerance_type:str='ppm', 

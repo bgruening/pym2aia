@@ -1,4 +1,4 @@
-from .ImageIO import *
+from .ImzMLReader import *
 from .Generators import *
 from .Dataset import *
 from .utils import *

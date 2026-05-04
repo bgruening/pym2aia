@@ -473,20 +473,20 @@ class ImzMLReader(object):
     def GetNormalizationArray(self, type) -> np.ndarray:
         ''' Get a normalization image data as numpy array.
 
-        :return: Numpy array of size [x,y,z] with dtype=np.float64.
+        :return: Numpy array of size [x,y,z] with dtype=np.float32.
         '''
         self.CheckHandle()
         arg = create_string_buffer(type.encode())
         
-        image = np.zeros(self.GetShape()[::-1], dtype=np.float64)
+        image = np.zeros(self.GetShape()[::-1], dtype=np.float32)
         self.lib.GetNormalizationArray(
-            self.handle, arg, image.ctypes.data_as(POINTER(c_double)))
+            self.handle, arg, image.ctypes.data_as(POINTER(c_float)))
         return image
 
     def GetNormalizationImage(self, type) -> sitk.Image:
         ''' Get a normalization image data as parameterized SimpleITK.Image.
         
-        :return: sitk.Image of size [x,y,z] with dtype=np.float64.
+        :return: sitk.Image of size [x,y,z] with dtype=np.float32.
         '''
         self.CheckHandle()
         slice = self.GetNormalizationArray(type)
